@@ -100,7 +100,7 @@ int main(void) {
         return 1;
     }
 
-    TTF_Font* font = TTF_OpenFont("../font/DejaVuSans-Bold.ttf", 16);
+    TTF_Font* font = TTF_OpenFont("../assets/font/DejaVuSans-Bold.ttf", 16);
 
     float A = 0, B = 0;
     float K1 = 200.0f, K2 = 200.0f, DISTANCE = 5.f, color_value = 300.f, speed = 0.18f;
