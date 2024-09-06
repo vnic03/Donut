@@ -23,6 +23,9 @@ I aimed to improve the efficiency of the rendering and calculations by optimizin
 
 ---
 
+#### Music Credits
+Thanks to [captash999](https://tuna.voicemod.net/user/drysignaltremolo18561) for the Background Music!
+
 <div style="text-align: center; font-size: 0.9em; margin-top: 20px;">
     <em>Thank you for checking out my project. Feel free to reach out with any questions or feedback.</em>
 </div>

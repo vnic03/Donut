@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_mixer.h>
 #include <math.h>
 #include <pthread.h>
 
@@ -35,6 +36,8 @@ float cos_lookup[LOOKUP_SIZE];
 #define BUTTON_HEIGHT 25
 #define BUTTON_X (WIDTH - 100)
 
+#define SONG_PARTS 3
+
 
 typedef struct {
     // Angle parameters for controlling the donut animation
@@ -68,6 +71,9 @@ typedef struct {
 
 const char brightness[] = ".,-~:;=!*#$@";
 
+Mix_Music* music[SONG_PARTS];
+int current_part = 0;
+int music_paused = 0;
 
 void init_lookup_tables() {
     for (int i = 0; i < LOOKUP_SIZE; i++) {
@@ -89,6 +95,7 @@ void render_button(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect button, cons
 
 void hsv_to_rgb(float h, float s, float v, int* r, int* g, int* b);
 
+void background_music();
 
 int main(void) {
     SDL_Window* window = SDL_CreateWindow("donut.c", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
@@ -101,6 +108,13 @@ int main(void) {
     }
 
     TTF_Font* font = TTF_OpenFont("../assets/font/DejaVuSans-Bold.ttf", 16);
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        printf("SDL_mixer Error: %s\n", Mix_GetError());
+        return 1;
+    }
+
+    background_music();
 
     float A = 0, B = 0;
     float K1 = 200.0f, K2 = 200.0f, DISTANCE = 5.f, color_value = 300.f, speed = 0.18f;
@@ -117,6 +131,8 @@ int main(void) {
     SDL_Rect rainbow_button = {BUTTON_X, 100, BUTTON_WIDTH, BUTTON_HEIGHT};
     int rainbow_mode = 0;
     float rainbow_color = 0.0f;
+
+    SDL_Rect music_button = {BUTTON_X, 140, BUTTON_WIDTH, BUTTON_HEIGHT};
 
     int sliders_visible = 1;
     int active_slider = 0;
@@ -152,6 +168,19 @@ int main(void) {
                            y >= rainbow_button.y && y <= rainbow_button.y + rainbow_button.h)
                 {
                     rainbow_mode = !rainbow_mode;
+
+                } else if (x >= music_button.x && x <= music_button.x + music_button.w &&
+                           y >= music_button.y && y <= music_button.y + music_button.h)
+                {
+                    if (Mix_PlayingMusic() == 1) {
+                        if (music_paused) {
+                            Mix_ResumeMusic();
+                            music_paused = 0;
+                        } else {
+                            Mix_PauseMusic();
+                            music_paused = 1;
+                        }
+                    }
                 }
                 if (sliders_visible) {
                     handle_slider_event(&event, k1_slider, &K1, K1_MIN, K1_MAX, &active_slider, 1);
@@ -235,6 +264,7 @@ int main(void) {
         render_button(renderer, font, toggle_button, sliders_visible ? "HIDE" : "SHOW");
         render_button(renderer, font, reset_button, "RESET");
         render_button(renderer, font, rainbow_button, "RAINBOW");
+        render_button(renderer, font, music_button, music_paused == 0 ? "STOP" : "PLAY");
 
         SDL_RenderPresent(renderer);
         SDL_Delay(5);
@@ -244,6 +274,11 @@ int main(void) {
             B += 0.03f * speed;
         }
     }
+
+    for (int i = 0; i < SONG_PARTS; i++) {
+        Mix_FreeMusic(music[i]);
+    }
+    Mix_Quit();
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -417,4 +452,23 @@ void hsv_to_rgb(float h, float s, float v, int* r, int* g, int* b) {
     *r = (int)(r1 * 255.f);
     *g = (int)(g1 * 255.f);
     *b = (int)(b1 * 255.f);
+}
+
+void music_finished_callback() {
+    current_part = (current_part + 1) % 3;
+    Mix_PlayMusic(music[current_part], 0);
+}
+
+void background_music() {
+    music[0] = Mix_LoadMUS("../assets/music/one.mp3");
+    music[1] = Mix_LoadMUS("../assets/music/two.mp3");
+    music[2] = Mix_LoadMUS("../assets/music/three.mp3");
+
+    for (int i = 0; i < SONG_PARTS; i++) {
+        if (music[i] == NULL) return;
+    }
+
+    Mix_HookMusicFinished(music_finished_callback);
+
+    Mix_PlayMusic(music[0], 0);
 }
