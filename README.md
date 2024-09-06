@@ -2,11 +2,8 @@
 
 <div style="text-align: center;">
     <img src="assets/short.gif" alt="Description of the GIF" style="border-radius: 15px; display: block; margin: 0 auto;"/>
-    <em style="display: block; text-align: center;">Looks unfortunate here lol</em>
+    <em style="display: block; text-align: center;">Donut looks unfortunate here lol</em>
 </div>
-
-This project is inspired by the original donut.c file. 
-I aimed to improve the efficiency of the rendering and calculations by optimizing the use of multithreading and lookup tables for trigonometric functions.
 
 ## Features
 
