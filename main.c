@@ -10,6 +10,8 @@
 
 #define BRIGHTNESS_SCALE 12
 
+#define NUM_STARS 200
+
 #define LOOKUP_SIZE 628 // 2 * PI * 100
 float sin_lookup[LOOKUP_SIZE];
 float cos_lookup[LOOKUP_SIZE];
@@ -69,11 +71,27 @@ typedef struct {
 } DonutArgs;
 
 
+typedef struct {
+    int x, y; // X- and Y Coordinate of the Start
+    float brightness; // brightness for flicker effect
+} Star;
+
+
 const char brightness[] = ".,-~:;=!*#$@";
 
 Mix_Music* music[SONG_PARTS];
 int current_part = 0;
 int music_paused = 0;
+
+Star stars[NUM_STARS];
+
+void init_stars() {
+    for (int i = 0; i < NUM_STARS; i++) {
+        stars[i].x = rand() % WIDTH;
+        stars[i].y = rand() % HEIGHT;
+        stars[i].brightness = (rand() % 100) / 100.f;
+    }
+}
 
 void init_lookup_tables() {
     for (int i = 0; i < LOOKUP_SIZE; i++) {
@@ -84,6 +102,8 @@ void init_lookup_tables() {
 }
 
 void render_donut(float A, float B, SDL_Renderer* renderer, float K1, float K2, float DISTANCE, float color_value);
+
+void render_stars(SDL_Renderer* renderer);
 
 void handle_slider_event(SDL_Event* event, SDL_Rect slider, float* value, float min, float max, int* active_slider, int slider_id);
 
@@ -141,6 +161,7 @@ int main(void) {
     int last_mouse_x, last_mouse_y;
 
     init_lookup_tables();
+    init_stars();
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -234,6 +255,7 @@ int main(void) {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+        render_stars(renderer);
         render_donut(A, B, renderer, K1, K2, DISTANCE, color_value);
 
         if (sliders_visible) {
@@ -347,6 +369,19 @@ void render_donut(float A, float B, SDL_Renderer* renderer, float K1, float K2, 
             SDL_SetRenderDrawColor(renderer, r, g, b_col, 255);
             SDL_RenderDrawPoint(renderer, x, y);
         }
+    }
+}
+
+void render_stars(SDL_Renderer* renderer) {
+    for (int i = 0; i < NUM_STARS; ++i) {
+        int brightness_value = (int)(255 * stars[i].brightness);
+        SDL_SetRenderDrawColor(renderer, brightness_value, brightness_value, brightness_value, 255);
+        SDL_RenderDrawPoint(renderer, stars[i].x, stars[i].y);
+
+        // simulating a flicker
+        stars[i].brightness += (rand() % 5 - 2) * 0.01f;
+        if (stars[i].brightness < 0) stars[i].brightness = 0;
+        if (stars[i].brightness > 1) stars[i].brightness = 1;
     }
 }
 
