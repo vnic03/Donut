@@ -117,6 +117,8 @@ void hsv_to_rgb(float h, float s, float v, int* r, int* g, int* b);
 
 void background_music();
 
+int is_button_pressed(SDL_Event event, SDL_Rect button);
+
 int main(void) {
     SDL_Window* window = SDL_CreateWindow("donut.c", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -149,10 +151,10 @@ int main(void) {
     SDL_Rect toggle_button = {BUTTON_X, 20, BUTTON_WIDTH, BUTTON_HEIGHT};
     SDL_Rect reset_button = {BUTTON_X, 60, BUTTON_WIDTH, BUTTON_HEIGHT};
     SDL_Rect rainbow_button = {BUTTON_X, 100, BUTTON_WIDTH, BUTTON_HEIGHT};
+    SDL_Rect music_button = {BUTTON_X, 140, BUTTON_WIDTH, BUTTON_HEIGHT};
+
     int rainbow_mode = 0;
     float rainbow_color = 0.0f;
-
-    SDL_Rect music_button = {BUTTON_X, 140, BUTTON_WIDTH, BUTTON_HEIGHT};
 
     int sliders_visible = 1;
     int active_slider = 0;
@@ -169,15 +171,10 @@ int main(void) {
                 running = 0;
 
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-                int x = event.button.x;
-                int y = event.button.y;
-                if (x >= toggle_button.x && x <= toggle_button.x + toggle_button.w &&
-                    y >= toggle_button.y && y <= toggle_button.y + toggle_button.h)
-                {
+                if (is_button_pressed(event, toggle_button)) {
                     sliders_visible = !sliders_visible;
-                } else if (x >= reset_button.x && x <= reset_button.x + reset_button.w &&
-                           y >= reset_button.y && y <= reset_button.y + reset_button.h)
-                {
+
+                } else if (is_button_pressed(event, reset_button)) {
                     A = 0; B = 0;
                     K1 = K2 = 200.0f;
                     DISTANCE = 5.0f;
@@ -185,14 +182,10 @@ int main(void) {
                     speed = 0.18f;
                     rainbow_mode = 0;
 
-                } else if (x >= rainbow_button.x && x <= rainbow_button.x + rainbow_button.w &&
-                           y >= rainbow_button.y && y <= rainbow_button.y + rainbow_button.h)
-                {
+                } else if (is_button_pressed(event, rainbow_button)) {
                     rainbow_mode = !rainbow_mode;
 
-                } else if (x >= music_button.x && x <= music_button.x + music_button.w &&
-                           y >= music_button.y && y <= music_button.y + music_button.h)
-                {
+                } else if (is_button_pressed(event, music_button)) {
                     if (Mix_PlayingMusic() == 1) {
                         if (music_paused) {
                             Mix_ResumeMusic();
@@ -211,8 +204,8 @@ int main(void) {
                 }
                 if (event.button.button == SDL_BUTTON_LEFT && active_slider == 0) {
                     mouse_down = 1;
-                    last_mouse_x = x;
-                    last_mouse_y = y;
+                    last_mouse_x = event.button.x;
+                    last_mouse_y = event.button.y;
                 }
 
             } else if (event.type == SDL_MOUSEBUTTONUP) {
@@ -506,4 +499,14 @@ void background_music() {
     Mix_HookMusicFinished(music_finished_callback);
 
     Mix_PlayMusic(music[0], 0);
+}
+
+int is_button_pressed(SDL_Event event, SDL_Rect button) {
+    int x = event.button.x, y = event.button.y;
+    if (x >= button.x && x <= button.x + button.w &&
+        y >= button.y && y <= button.y + button.h)
+    {
+        return 1;
+    }
+    return 0;
 }
