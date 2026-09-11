@@ -116,27 +116,25 @@ void render_button(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect button, cons
 void hsv_to_rgb(float h, float s, float v, int* r, int* g, int* b);
 
 void background_music();
-
 int is_button_pressed(SDL_Event event, SDL_Rect button);
 
 int main(void) {
     SDL_Window* window = SDL_CreateWindow("donut.c", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    if (TTF_Init() != 0) {
-        printf("TTF_Init Error: %s\n", TTF_GetError());
-        SDL_Quit();
-        return 1;
+    background_music();
+
+    if (TTF_Init() == -1) {
+      fprintf(stderr, "TTF_Init Fehler: %s\n", TTF_GetError());
+      return 1;
     }
 
     TTF_Font* font = TTF_OpenFont("../assets/font/DejaVuSans-Bold.ttf", 16);
 
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printf("SDL_mixer Error: %s\n", Mix_GetError());
-        return 1;
+    if (font == NULL) {
+      fprintf(stderr, "TTF_OpenFont Fehler: %s\n", TTF_GetError());
+      return 1;
     }
-
-    background_music();
 
     float A = 0, B = 0;
     float K1 = 200.0f, K2 = 200.0f, DISTANCE = 5.f, color_value = 300.f, speed = 0.18f;
@@ -163,6 +161,7 @@ int main(void) {
     int last_mouse_x, last_mouse_y;
 
     init_lookup_tables();
+
     init_stars();
 
     while (running) {
@@ -293,6 +292,7 @@ int main(void) {
     for (int i = 0; i < SONG_PARTS; i++) {
         Mix_FreeMusic(music[i]);
     }
+    Mix_CloseAudio();
     Mix_Quit();
 
     SDL_DestroyRenderer(renderer);
@@ -488,12 +488,25 @@ void music_finished_callback() {
 }
 
 void background_music() {
+    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) < 0) {
+      fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+      return;
+    }
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+      fprintf(stderr, "Mix_OpenAudio failed: %s\n", Mix_GetError());
+      return;
+    }
+
     music[0] = Mix_LoadMUS("../assets/music/one.mp3");
     music[1] = Mix_LoadMUS("../assets/music/two.mp3");
     music[2] = Mix_LoadMUS("../assets/music/three.mp3");
 
     for (int i = 0; i < SONG_PARTS; i++) {
-        if (music[i] == NULL) return;
+        if (music[i] == NULL) {
+          fprintf(stderr, "Mix_LoadMUS failed: %s\n", Mix_GetError());
+          return;
+        }
     }
 
     Mix_HookMusicFinished(music_finished_callback);
